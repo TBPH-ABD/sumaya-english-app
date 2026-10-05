@@ -89,7 +89,8 @@ export async function POST(request: Request) {
   if (messages[0].role !== "user") return Response.json({ error: "bad_request" }, { status: 400 });
 
   const apiKey = process.env.TUTOR_API_KEY;
-  if (!apiKey) return Response.json({ error: "not_configured" }, { status: 503 });
+  // `reason` tells whoever is setting the site up which of the two it is; the learner sees one message.
+  if (!apiKey) return Response.json({ error: "not_configured", reason: "key_missing" }, { status: 503 });
 
   let upstream: Response;
   try {
@@ -113,7 +114,11 @@ export async function POST(request: Request) {
 
   // A rejected key reads as "not set up" to the learner; free-tier limits read as "busy".
   if (upstream.status === 401 || upstream.status === 403) {
-    return Response.json({ error: "not_configured" }, { status: 503 });
+    console.error("tutor: provider refused the key", upstream.status, (await upstream.text()).slice(0, 300));
+    return Response.json(
+      { error: "not_configured", reason: "key_rejected", providerStatus: upstream.status },
+      { status: 503 },
+    );
   }
   if (upstream.status === 429) return Response.json({ error: "busy" }, { status: 429 });
   if (!upstream.ok) {
