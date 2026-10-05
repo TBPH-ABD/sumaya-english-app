@@ -64,41 +64,48 @@ export async function POST(request: Request) {
   if (!config) return Response.json({ error: "not_configured", reason: "key_missing" }, { status: 503 });
   const provider = new URL(config.chatUrl).host;
 
-  let upstream: Response;
-  try {
-    upstream = await fetch(config.chatUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${config.apiKey}` },
-      body: JSON.stringify({
-        model: config.chatModel,
-        messages: [{ role: "system", content: systemPrompt(parsed.name) }, ...messages],
-        // Spoken turns are a few sentences, but some models also spend tokens on hidden
-        // reasoning before they answer, so the limit leaves room for both.
-        max_tokens: 800,
-        temperature: 0.7,
-      }),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-    });
-  } catch (error) {
-    console.error("tutor: could not reach the provider", error);
-    return Response.json({ error: "upstream" }, { status: 502 });
+  // Free models are often busy or retired: try each configured model until one answers.
+  let upstream: Response | null = null;
+  let model = config.chatModels[0];
+  let lastStatus = 0;
+  for (const candidate of config.chatModels) {
+    model = candidate;
+    try {
+      upstream = await fetch(config.chatUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${config.apiKey}` },
+        body: JSON.stringify({
+          model: candidate,
+          messages: [{ role: "system", content: systemPrompt(parsed.name) }, ...messages],
+          // Spoken turns are a few sentences, but some models also spend tokens on hidden
+          // reasoning before they answer, so the limit leaves room for both.
+          max_tokens: 800,
+          temperature: 0.7,
+        }),
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
+    } catch (error) {
+      console.error("tutor: could not reach the provider", candidate, error);
+      upstream = null;
+      continue;
+    }
+    lastStatus = upstream.status;
+    // A rejected key will be rejected by every model; anything else moves on to the next one.
+    if (upstream.ok || upstream.status === 401 || upstream.status === 403) break;
+    console.error("tutor: model failed", candidate, upstream.status, (await upstream.text()).slice(0, 200));
   }
+  if (!upstream) return Response.json({ error: "upstream" }, { status: 502 });
 
   // A rejected key reads as "not set up" to the learner; free-tier limits read as "busy".
   if (upstream.status === 401 || upstream.status === 403) {
-    console.error("tutor: provider refused the key", upstream.status, (await upstream.text()).slice(0, 300));
     return Response.json(
       { error: "not_configured", reason: "key_rejected", provider, providerStatus: upstream.status },
       { status: 503 },
     );
   }
-  if (upstream.status === 429) return Response.json({ error: "busy" }, { status: 429 });
+  if (lastStatus === 429) return Response.json({ error: "busy" }, { status: 429 });
   if (!upstream.ok) {
-    console.error("tutor: provider error", upstream.status, (await upstream.text()).slice(0, 300));
-    return Response.json(
-      { error: "upstream", provider, model: config.chatModel, providerStatus: upstream.status },
-      { status: 502 },
-    );
+    return Response.json({ error: "upstream", provider, model, providerStatus: upstream.status }, { status: 502 });
   }
 
   const data = (await upstream.json().catch(() => null)) as {

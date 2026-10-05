@@ -15,14 +15,19 @@ const OPENROUTER = "https://openrouter.ai/api/v1";
 const GROQ_MODEL = "openai/gpt-oss-120b";
 // A named free chat model. Not "openrouter/free": that router can pick a non-chat model
 // (it answered a greeting with a content-safety verdict).
-const OPENROUTER_MODEL = "google/gemma-4-31b-it:free";
+const OPENROUTER_MODELS = [
+  "google/gemma-4-31b-it:free",
+  "google/gemma-4-26b-a4b-it:free",
+  "nvidia/nemotron-3-super-120b-a12b:free",
+];
 // The voice Salah chose for the tutor. Used whenever the key is an OpenRouter key.
 const OPENROUTER_VOICE_MODEL = "fish-audio/s2.1-pro-free:free";
 
 export type TutorConfig = {
   apiKey: string;
   chatUrl: string;
-  chatModel: string;
+  // Tried in order: the next one is used when a free model is busy or gone.
+  chatModels: string[];
   // Present only when the key is an OpenRouter key.
   voice: { url: string; model: string; voice?: string } | null;
 };
@@ -72,7 +77,7 @@ export async function getTutorConfig(): Promise<TutorConfig | null> {
   return {
     apiKey,
     chatUrl: customUrl || (onOpenRouter ? `${OPENROUTER}/chat/completions` : GROQ_CHAT),
-    chatModel: chatModel || (onOpenRouter ? OPENROUTER_MODEL : GROQ_MODEL),
+    chatModels: chatModel ? [chatModel] : onOpenRouter ? OPENROUTER_MODELS : [GROQ_MODEL],
     voice:
       onOpenRouter
         ? {
