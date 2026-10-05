@@ -1,17 +1,10 @@
+import { getTutorConfig, overLimit } from "@/lib/tutor-config";
+
 // Voice tutor backend: one short spoken-style reply per call.
 // The browser sends the whole conversation each time; nothing is stored here.
-//
-// It talks to any OpenAI-compatible chat endpoint, so a free provider can be used.
-// Configure it in .env.local:
-//   TUTOR_API_KEY   required. A free key from the provider (Groq by default: console.groq.com/keys).
-//   TUTOR_API_URL   optional. Defaults to Groq's endpoint.
-//   TUTOR_MODEL     optional. Defaults to a model on Groq's free tier.
+// It talks to any OpenAI-compatible chat endpoint; settings are described in src/lib/tutor-config.ts.
 
-const DEFAULT_URL = "https://api.groq.com/openai/v1/chat/completions";
-// Checked against the key's own model list on 2026-10-05. Providers retire models: if the
-// route starts answering 502, list the current ones (GET .../openai/v1/models) and set TUTOR_MODEL.
-const DEFAULT_MODEL = "openai/gpt-oss-120b";
-const TIMEOUT_MS = 20_000;
+const TIMEOUT_MS = 25_000;
 
 const MAX_NAME = 40;
 const MAX_TURNS = 40;
@@ -21,27 +14,6 @@ const MAX_MESSAGE = 600;
 const SESSION_START = "[session start]";
 
 type Turn = { role: "user" | "assistant"; content: string };
-
-// Rough per-visitor limit so a public deployment cannot drain the free key. It lives in memory:
-// it resets when the server restarts and is per instance on serverless hosts, so it slows abuse
-// rather than stopping it.
-const WINDOW_MS = 60_000;
-const MAX_PER_WINDOW = 20;
-const recentCalls = new Map<string, number[]>();
-
-function overLimit(visitor: string): boolean {
-  const now = Date.now();
-  const calls = (recentCalls.get(visitor) ?? []).filter((time) => now - time < WINDOW_MS);
-  if (calls.length >= MAX_PER_WINDOW) {
-    recentCalls.set(visitor, calls);
-    return true;
-  }
-  calls.push(now);
-  recentCalls.set(visitor, calls);
-  // Keep the table from growing without bound.
-  if (recentCalls.size > 5000) recentCalls.clear();
-  return false;
-}
 
 function systemPrompt(name: string): string {
   return `You are Salma, a warm, patient English conversation tutor. You are talking out loud with a student named ${name}, whose first language is Arabic. Everything you write is read aloud by a speech synthesizer and everything the student says reaches you through speech recognition, so transcripts may contain small recognition errors: respond to what the student most likely meant.
@@ -78,8 +50,7 @@ function parseBody(body: unknown): { name: string; turns: Turn[] } | null {
 }
 
 export async function POST(request: Request) {
-  const visitor = request.headers.get("x-forwarded-for")?.split(",")[0].trim() || "local";
-  if (overLimit(visitor)) return Response.json({ error: "busy" }, { status: 429 });
+  if (overLimit(request, "tutor", 20)) return Response.json({ error: "busy" }, { status: 429 });
 
   const parsed = parseBody(await request.json().catch(() => null));
   if (!parsed) return Response.json({ error: "bad_request" }, { status: 400 });
@@ -88,20 +59,21 @@ export async function POST(request: Request) {
   const messages: Turn[] = parsed.turns.length > 0 ? parsed.turns : [{ role: "user", content: SESSION_START }];
   if (messages[0].role !== "user") return Response.json({ error: "bad_request" }, { status: 400 });
 
-  const apiKey = process.env.TUTOR_API_KEY;
-  // `reason` tells whoever is setting the site up which of the two it is; the learner sees one message.
-  if (!apiKey) return Response.json({ error: "not_configured", reason: "key_missing" }, { status: 503 });
+  // `reason` tells whoever is setting the site up what is wrong; the learner sees one message.
+  const config = await getTutorConfig();
+  if (!config) return Response.json({ error: "not_configured", reason: "key_missing" }, { status: 503 });
+  const provider = new URL(config.chatUrl).host;
 
   let upstream: Response;
   try {
-    upstream = await fetch(process.env.TUTOR_API_URL || DEFAULT_URL, {
+    upstream = await fetch(config.chatUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${config.apiKey}` },
       body: JSON.stringify({
-        model: process.env.TUTOR_MODEL || DEFAULT_MODEL,
+        model: config.chatModel,
         messages: [{ role: "system", content: systemPrompt(parsed.name) }, ...messages],
-        // Spoken turns are a few sentences, but this model also spends tokens on hidden
-        // reasoning before it answers, so the limit leaves room for both.
+        // Spoken turns are a few sentences, but some models also spend tokens on hidden
+        // reasoning before they answer, so the limit leaves room for both.
         max_tokens: 800,
         temperature: 0.7,
       }),
@@ -116,14 +88,17 @@ export async function POST(request: Request) {
   if (upstream.status === 401 || upstream.status === 403) {
     console.error("tutor: provider refused the key", upstream.status, (await upstream.text()).slice(0, 300));
     return Response.json(
-      { error: "not_configured", reason: "key_rejected", providerStatus: upstream.status },
+      { error: "not_configured", reason: "key_rejected", provider, providerStatus: upstream.status },
       { status: 503 },
     );
   }
   if (upstream.status === 429) return Response.json({ error: "busy" }, { status: 429 });
   if (!upstream.ok) {
     console.error("tutor: provider error", upstream.status, (await upstream.text()).slice(0, 300));
-    return Response.json({ error: "upstream" }, { status: 502 });
+    return Response.json(
+      { error: "upstream", provider, model: config.chatModel, providerStatus: upstream.status },
+      { status: 502 },
+    );
   }
 
   const data = (await upstream.json().catch(() => null)) as {

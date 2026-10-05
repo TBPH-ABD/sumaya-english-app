@@ -51,6 +51,9 @@ export function VoiceTutor() {
   const activeRef = useRef(false);
   const logRef = useRef<HTMLOListElement>(null);
   const wordTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // The tutor's recorded voice, when the server has a voice model; otherwise the browser speaks.
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const serverVoiceRef = useRef(true);
 
   useEffect(() => {
     // Leaving the page by any route ends the session.
@@ -58,6 +61,7 @@ export function VoiceTutor() {
       activeRef.current = false;
       recognitionRef.current?.abort();
       stopSpeaking();
+      audioRef.current?.pause();
       if (wordTimerRef.current) clearTimeout(wordTimerRef.current);
     };
   }, []);
@@ -71,10 +75,38 @@ export function VoiceTutor() {
     wordTimerRef.current = null;
   }
 
+  function stopVoice() {
+    stopSpeaking();
+    audioRef.current?.pause();
+    audioRef.current = null;
+  }
+
+  // Fetches the reply as audio from the server's voice model. null when there is none or it failed.
+  async function fetchVoice(reply: string): Promise<HTMLAudioElement | null> {
+    if (!serverVoiceRef.current) return null;
+    try {
+      const response = await fetch("/api/voice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: reply }),
+      });
+      if (response.status === 404) serverVoiceRef.current = false;
+      if (!response.ok) return null;
+      const audio = new Audio(URL.createObjectURL(await response.blob()));
+      await new Promise<void>((resolve, reject) => {
+        audio.onloadedmetadata = () => resolve();
+        audio.onerror = () => reject(new Error("audio"));
+      });
+      return audio;
+    } catch {
+      return null;
+    }
+  }
+
   // Speaks a reply while the caption fills in and the mouth moves, word by word.
-  function say(reply: string) {
+  async function say(reply: string) {
     const words = reply.split(/\s+/).filter(Boolean);
-    // Character position where each word starts, to match the voice's word events.
+    // Character position where each word starts, to match the browser voice's word events.
     const starts: number[] = [];
     let from = 0;
     for (const word of words) {
@@ -83,32 +115,53 @@ export function VoiceTutor() {
       from = at + word.length;
     }
 
-    function show(index: number) {
+    function show(index: number, ms: number) {
       setCaption({ words, shown: index + 1 });
-      setBeat((previous) => ({ count: previous.count + 1, ms: wordMs(words[index]) }));
+      setBeat((previous) => ({ count: previous.count + 1, ms }));
     }
 
-    // Until the voice reports real word timing, advance on an estimate.
+    // Words advance on a timer. `scale` stretches the estimate to the real length of the audio.
     let timed = false;
-    function estimate(index: number) {
+    function advance(index: number, scale: number) {
       if (timed || index >= words.length) return;
-      show(index);
-      wordTimerRef.current = setTimeout(() => estimate(index + 1), wordMs(words[index]));
+      const ms = wordMs(words[index]) * scale;
+      show(index, Math.min(ms, 480));
+      wordTimerRef.current = setTimeout(() => advance(index + 1, scale), ms);
     }
 
     function finish() {
       stopWordTimer();
+      audioRef.current = null;
       setCaption({ words, shown: words.length });
       listen();
     }
 
     setCaption({ words, shown: 0 });
+
+    const audio = await fetchVoice(reply);
+    if (!activeRef.current) return;
+    if (audio) {
+      const estimate = words.reduce((total, word) => total + wordMs(word), 0);
+      const scale = Number.isFinite(audio.duration) && estimate > 0 ? (audio.duration * 1000) / estimate : 1;
+      audio.onended = finish;
+      audioRef.current = audio;
+      try {
+        await audio.play();
+        setStatus("speaking");
+        advance(0, scale);
+        return;
+      } catch {
+        // The browser refused to play it (autoplay rules): fall back to its own voice.
+        audioRef.current = null;
+      }
+    }
+
     setStatus("speaking");
     const speaking = speak(reply, 1, finish, (charIndex) => {
       timed = true;
       stopWordTimer();
       const index = starts.findLastIndex((start) => start <= charIndex);
-      if (index >= 0) show(index);
+      if (index >= 0) show(index, wordMs(words[index]));
     });
     if (!speaking) {
       // No voice on this device: show the whole reply and hand over.
@@ -116,7 +169,8 @@ export function VoiceTutor() {
       listen();
       return;
     }
-    wordTimerRef.current = setTimeout(() => estimate(0), 350);
+    // Until the browser voice reports real word timing, advance on the estimate.
+    wordTimerRef.current = setTimeout(() => advance(0, 1), 350);
   }
 
   function listen() {
@@ -127,7 +181,7 @@ export function VoiceTutor() {
       setStatus("idle");
       return;
     }
-    stopSpeaking();
+    stopVoice();
     stopWordTimer();
     let spoken = "";
     setHeard("");
@@ -211,7 +265,7 @@ export function VoiceTutor() {
     const text = draft.trim();
     if (!text || status === "thinking") return;
     recognitionRef.current?.abort();
-    stopSpeaking();
+    stopVoice();
     stopWordTimer();
     setDraft("");
     send(text);
@@ -220,7 +274,7 @@ export function VoiceTutor() {
   function leave() {
     activeRef.current = false;
     recognitionRef.current?.abort();
-    stopSpeaking();
+    stopVoice();
     stopWordTimer();
     router.push("/home");
   }
