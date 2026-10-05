@@ -2,6 +2,7 @@
 
 import { Icon } from "@/components/Icon";
 import { useLocale } from "@/components/LocaleProvider";
+import { requiredLessonId } from "@/data/curriculum";
 import { useCompletedLessons } from "@/lib/progress";
 
 export function ProgressBar({ lessonIds, barClass }: { lessonIds: string[]; barClass: string }) {
@@ -43,4 +44,19 @@ export function LessonDoneBadge({ id }: { id: string }) {
       {t.progress.completed}
     </span>
   );
+}
+
+// Shows `locked` until the lesson before `id` is completed, then `children`.
+export function UnlockGate({
+  id,
+  locked,
+  children,
+}: {
+  id: string;
+  locked: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const completed = useCompletedLessons();
+  const required = requiredLessonId(id);
+  return <>{required === null || completed.includes(required) ? children : locked}</>;
 }

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Icon } from "@/components/Icon";
-import { ProgressBar } from "@/components/Progress";
-import { levelLessonIds, levels, levelStyles, levelText } from "@/data/curriculum";
+import { ProgressBar, UnlockGate } from "@/components/Progress";
+import { levelLessonIds, lessonId, levels, levelStyles, levelText } from "@/data/curriculum";
 import { getDictionary } from "@/lib/locale";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -42,7 +42,12 @@ export default async function LevelsPage() {
                   {level.code}
                 </span>
                 {hasContent ? (
-                  <Icon name="chevron-left" className="text-muted-foreground" />
+                  <UnlockGate
+                    id={lessonId(level.id, 1, 1)}
+                    locked={<Icon name="lock" className="text-muted-foreground" aria-label={t.levels.locked} />}
+                  >
+                    <Icon name="chevron-left" className="text-muted-foreground" />
+                  </UnlockGate>
                 ) : (
                   <span className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-sm font-bold text-muted-foreground">
                     <Icon name="lock" size={16} />
@@ -64,9 +69,14 @@ export default async function LevelsPage() {
           return (
             <li key={level.id}>
               {hasContent ? (
-                <Link href={`/levels/${level.id}`} className="card card-interactive block h-full p-5">
-                  {body}
-                </Link>
+                <UnlockGate
+                  id={lessonId(level.id, 1, 1)}
+                  locked={<div className="card h-full p-5 opacity-80">{body}</div>}
+                >
+                  <Link href={`/levels/${level.id}`} className="card card-interactive block h-full p-5">
+                    {body}
+                  </Link>
+                </UnlockGate>
               ) : (
                 <div className="card h-full p-5 opacity-80">{body}</div>
               )}

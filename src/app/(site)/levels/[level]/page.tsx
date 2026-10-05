@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Icon } from "@/components/Icon";
-import { LessonDoneBadge, ProgressBar } from "@/components/Progress";
+import { LessonDoneBadge, ProgressBar, UnlockGate } from "@/components/Progress";
 import { getLevel, lessonId, levelLessonIds, levelStyles, levelText } from "@/data/curriculum";
 import { getDictionary } from "@/lib/locale";
 
@@ -91,7 +91,12 @@ export default async function LevelPage({ params }: Props) {
                         {ready ? (
                           <>
                             <LessonDoneBadge id={id} />
-                            <Icon name="chevron-left" className="shrink-0 text-muted-foreground" />
+                            <UnlockGate
+                              id={id}
+                              locked={<Icon name="lock" className="shrink-0 text-muted-foreground" aria-label={t.levels.locked} />}
+                            >
+                              <Icon name="chevron-left" className="shrink-0 text-muted-foreground" />
+                            </UnlockGate>
                           </>
                         ) : (
                           <Icon name="lock" className="shrink-0 text-muted-foreground" aria-label={t.levels.unavailable} />
@@ -102,12 +107,21 @@ export default async function LevelPage({ params }: Props) {
                     return (
                       <li key={id}>
                         {ready ? (
-                          <Link
-                            href={`/levels/${id}`}
-                            className="flex min-h-16 items-center gap-3 rounded-2xl border-2 border-border bg-card p-3 transition-colors duration-200 hover:bg-muted"
+                          <UnlockGate
+                            id={id}
+                            locked={
+                              <div className="flex min-h-16 items-center gap-3 rounded-2xl border-2 border-dashed border-border p-3 opacity-70">
+                                {row}
+                              </div>
+                            }
                           >
-                            {row}
-                          </Link>
+                            <Link
+                              href={`/levels/${id}`}
+                              className="flex min-h-16 items-center gap-3 rounded-2xl border-2 border-border bg-card p-3 transition-colors duration-200 hover:bg-muted"
+                            >
+                              {row}
+                            </Link>
+                          </UnlockGate>
                         ) : (
                           <div className="flex min-h-16 items-center gap-3 rounded-2xl border-2 border-dashed border-border p-3 opacity-70">
                             {row}

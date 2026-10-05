@@ -1895,6 +1895,19 @@ export function levelLessonIds(level: Level): string[] {
   return level.units.flatMap((unit, u) => unitLessonIds(level.id, u + 1, unit));
 }
 
+// Lessons with content, in study order (levels are listed easiest first).
+const studyOrder: string[] = levels.flatMap((level) =>
+  level.units.flatMap((unit, u) =>
+    unit.lessons.flatMap((lesson, l) => (lesson.words.length > 0 ? [lessonId(level.id, u + 1, l + 1)] : [])),
+  ),
+);
+
+// The lesson that must be finished before this one opens; null for the very first.
+export function requiredLessonId(id: string): string | null {
+  const i = studyOrder.indexOf(id);
+  return i > 0 ? studyOrder[i - 1] : null;
+}
+
 // The words of one part (0-based) and how many parts a lesson has.
 export function partCount(words: Word[]): number {
   return Math.ceil(words.length / PART_SIZE);

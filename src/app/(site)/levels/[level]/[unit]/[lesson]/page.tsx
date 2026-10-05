@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Icon } from "@/components/Icon";
+import { UnlockGate } from "@/components/Progress";
 import { LessonView } from "@/components/LessonView";
 import { getLevel, lessonId, levelStyles } from "@/data/curriculum";
 import { getDictionary } from "@/lib/locale";
@@ -35,7 +36,7 @@ export default async function LessonPage({ params }: Props) {
   return (
     <>
       <Link
-        href="{`/levels/${level.id}`}"
+        href={`/levels/${level.id}`}
         className="inline-flex min-h-11 items-center gap-1 rounded-xl font-bold text-primary-deep hover:underline"
       >
         <Icon name="chevron-right" size={20} />
@@ -55,11 +56,22 @@ export default async function LessonPage({ params }: Props) {
         {lesson.title}
       </h1>
 
-      <LessonView
+      <UnlockGate
         id={lessonId(level.id, unitNumber, lessonNumber)}
-        lesson={lesson}
-        backHref={`/levels/${level.id}`}
-      />
+        locked={
+          <div className="card mt-8 p-8 text-center">
+            <Icon name="lock" size={32} className="mx-auto text-muted-foreground" />
+            <h2 className="mt-3 text-xl font-bold">{t.levels.locked}</h2>
+            <p className="mt-1 text-muted-foreground">{t.levels.lockedHint}</p>
+          </div>
+        }
+      >
+        <LessonView
+          id={lessonId(level.id, unitNumber, lessonNumber)}
+          lesson={lesson}
+          backHref={`/levels/${level.id}`}
+        />
+      </UnlockGate>
     </>
   );
 }
