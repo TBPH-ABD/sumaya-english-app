@@ -13,8 +13,9 @@ const OPENROUTER = "https://openrouter.ai/api/v1";
 // Checked on 2026-10-05. Providers retire models: when the tutor starts failing with
 // "upstream", list the provider's current models and set TUTOR_MODEL.
 const GROQ_MODEL = "openai/gpt-oss-120b";
-// OpenRouter's own router across whichever free chat models exist at the moment.
-const OPENROUTER_MODEL = "openrouter/free";
+// A named free chat model. Not "openrouter/free": that router can pick a non-chat model
+// (it answered a greeting with a content-safety verdict).
+const OPENROUTER_MODEL = "google/gemma-4-31b-it:free";
 
 export type TutorConfig = {
   apiKey: string;
