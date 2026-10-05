@@ -3,8 +3,8 @@
 //   TUTOR_API_KEY      required. A Groq key (gsk_...) or an OpenRouter key (sk-or-...).
 //   TUTOR_API_URL      optional. Chat endpoint; chosen from the key when not set.
 //   TUTOR_MODEL        optional. Chat model (the tutor's "brain").
-//   TUTOR_VOICE_MODEL  optional. OpenRouter text-to-speech model (the tutor's voice).
-//                      Without it the browser's own voice is used.
+//   TUTOR_VOICE_MODEL  optional. OpenRouter text-to-speech model (the tutor's voice); has a default.
+//                      With a non-OpenRouter key the browser's own voice is used.
 //   TUTOR_VOICE        optional. Voice name for that model, when the model needs one.
 
 const GROQ_CHAT = "https://api.groq.com/openai/v1/chat/completions";
@@ -16,12 +16,14 @@ const GROQ_MODEL = "openai/gpt-oss-120b";
 // A named free chat model. Not "openrouter/free": that router can pick a non-chat model
 // (it answered a greeting with a content-safety verdict).
 const OPENROUTER_MODEL = "google/gemma-4-31b-it:free";
+// The voice Salah chose for the tutor. Used whenever the key is an OpenRouter key.
+const OPENROUTER_VOICE_MODEL = "fish-audio/s2.1-pro-free:free";
 
 export type TutorConfig = {
   apiKey: string;
   chatUrl: string;
   chatModel: string;
-  // Present only when a voice model is set and the key is an OpenRouter key.
+  // Present only when the key is an OpenRouter key.
   voice: { url: string; model: string; voice?: string } | null;
 };
 
@@ -72,8 +74,12 @@ export async function getTutorConfig(): Promise<TutorConfig | null> {
     chatUrl: customUrl || (onOpenRouter ? `${OPENROUTER}/chat/completions` : GROQ_CHAT),
     chatModel: chatModel || (onOpenRouter ? OPENROUTER_MODEL : GROQ_MODEL),
     voice:
-      onOpenRouter && voiceModel
-        ? { url: `${OPENROUTER}/audio/speech`, model: voiceModel, voice: clean(process.env.TUTOR_VOICE, "TUTOR_VOICE") || undefined }
+      onOpenRouter
+        ? {
+            url: `${OPENROUTER}/audio/speech`,
+            model: voiceModel || OPENROUTER_VOICE_MODEL,
+            voice: clean(process.env.TUTOR_VOICE, "TUTOR_VOICE") || undefined,
+          }
         : null,
   };
 }
