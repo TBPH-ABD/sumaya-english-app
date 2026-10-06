@@ -1902,10 +1902,14 @@ const studyOrder: string[] = levels.flatMap((level) =>
   ),
 );
 
-// The lesson that must be finished before this one opens; null for the very first.
+// Levels anyone can start without finishing the level before (Salah asked for A2 to be open).
+const OPEN_LEVELS: LevelId[] = ["a2"];
+const openLessons = OPEN_LEVELS.map((level) => studyOrder.find((id) => id.startsWith(`${level}/`)));
+
+// The lesson that must be finished before this one opens; null when it is open from the start.
 export function requiredLessonId(id: string): string | null {
   const i = studyOrder.indexOf(id);
-  return i > 0 ? studyOrder[i - 1] : null;
+  return i > 0 && !openLessons.includes(id) ? studyOrder[i - 1] : null;
 }
 
 // The words of one part (0-based) and how many parts a lesson has.
