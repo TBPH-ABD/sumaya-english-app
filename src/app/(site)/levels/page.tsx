@@ -25,7 +25,7 @@ export default async function LevelsPage() {
       <h1 className="mt-4 text-3xl font-bold sm:text-4xl">{t.levels.title}</h1>
       <p className="mt-2 text-lg text-muted-foreground">{t.levels.subtitle}</p>
 
-      <ul className="stagger mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <ul className="stagger mt-8 grid gap-4">
         {levels.map((level) => {
           const styles = levelStyles[level.id];
           const lessonIds = levelLessonIds(level);

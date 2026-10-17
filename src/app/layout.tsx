@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Baloo_Bhaijaan_2, IBM_Plex_Sans_Arabic } from "next/font/google";
 import { LocaleProvider } from "@/components/LocaleProvider";
 import { getDictionary, getTheme } from "@/lib/locale";
@@ -15,6 +15,13 @@ const plexArabic = IBM_Plex_Sans_Arabic({
   subsets: ["arabic", "latin"],
   weight: ["400", "500", "600", "700"],
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#805ad5",
+};
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getDictionary();

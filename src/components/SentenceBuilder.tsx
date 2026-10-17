@@ -48,7 +48,7 @@ export function SentenceBuilder() {
   if (items.length === 0 || index >= items.length) {
     const finished = items.length > 0;
     return (
-      <section className="card mx-auto max-w-2xl p-8 text-center" aria-live="polite">
+      <section className="card mx-auto max-w-md p-6 text-center" aria-live="polite">
         <span className="anim-float mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-muted text-primary-deep">
           <Icon name={finished ? "star" : "pencil"} size={48} />
         </span>
@@ -95,7 +95,7 @@ export function SentenceBuilder() {
   }
 
   return (
-    <section className="card mx-auto max-w-2xl p-5">
+    <section className="card mx-auto max-w-md p-5">
       <p className="text-sm font-bold text-muted-foreground">{t.lesson.question(index + 1, items.length)}</p>
       <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted" aria-hidden="true">
         <div

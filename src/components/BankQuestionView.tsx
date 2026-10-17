@@ -67,7 +67,7 @@ export function BankQuestionView({ question, selected, onSelect, reveal }: Props
           <p className="rounded-2xl bg-muted p-4 font-display text-xl font-bold">{question.prompt}</p>
         )}
 
-        <ul className={`mt-6 grid gap-3 ${question.skill === "speaking" ? "" : "sm:grid-cols-2"}`}>
+        <ul className={`mt-6 grid gap-3`}>
           {question.options.map((option) => {
             const isAnswer = option === question.answer;
             const isSelected = option === selected;

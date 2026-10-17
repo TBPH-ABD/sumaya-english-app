@@ -17,7 +17,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         <span />
       </div>
       <header className="border-b-2 border-border bg-card/90 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-3">
+        <div className="mx-auto flex w-full max-w-md items-center justify-between gap-3 px-4 py-3">
           <Link href="/home" aria-label={t.common.brandHome} className="rounded-xl">
             <Logo />
           </Link>
@@ -34,7 +34,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
           </nav>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">{children}</main>
+      <main className="mx-auto w-full max-w-md flex-1 px-4 pt-6 pb-[max(2rem,env(safe-area-inset-bottom))]">{children}</main>
     </>
   );
 }

@@ -39,7 +39,7 @@ export function PlacementTest() {
 
   if (questions.length === 0) {
     return (
-      <section className="card mx-auto max-w-2xl p-8 text-center">
+      <section className="card mx-auto max-w-md p-6 text-center">
         <span className="anim-float mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-muted text-primary-deep">
           <Icon name="clipboard" size={48} />
         </span>
@@ -63,7 +63,7 @@ export function PlacementTest() {
     const styles = levelStyles[level.id];
 
     return (
-      <section className="card mx-auto max-w-2xl p-8 text-center" aria-live="polite">
+      <section className="card mx-auto max-w-md p-6 text-center" aria-live="polite">
         <p className="font-bold text-muted-foreground">{t.test.yourLevel}</p>
         <span
           dir="ltr"
@@ -116,7 +116,7 @@ export function PlacementTest() {
   }
 
   return (
-    <section className="card mx-auto max-w-2xl p-5">
+    <section className="card mx-auto max-w-md p-5">
       <p className="text-sm font-bold text-muted-foreground">{t.lesson.question(index + 1, questions.length)}</p>
       <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted" aria-hidden="true">
         <div

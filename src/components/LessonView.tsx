@@ -136,7 +136,7 @@ function Vocabulary({ words, offset, ...translation }: { words: Word[]; offset: 
         </div>
       </div>
 
-      <ol className="stagger mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <ol className="stagger mt-4 grid gap-4">
         {words.map((word, i) => (
           <li key={word.en} className="card flex flex-col p-4">
             <div className="flex items-start justify-between gap-2" dir="ltr">
@@ -292,7 +292,7 @@ function Practice({ id, words, part, parts, backHref }: PracticeProps) {
           {question.word.en}
         </p>
 
-        <ul className="mt-6 grid gap-3 sm:grid-cols-2" dir="rtl" lang="ar">
+        <ul className="mt-6 grid gap-3" dir="rtl" lang="ar">
           {question.options.map((option) => {
             const isAnswer = option === answer;
             const isSelected = option === selected;

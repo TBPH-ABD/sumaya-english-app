@@ -281,7 +281,7 @@ export function VoiceTutor() {
 
   if (!started) {
     return (
-      <section className="card mx-auto max-w-xl p-8 text-center">
+      <section className="card mx-auto max-w-md p-6 text-center">
         <TutorAvatar
           status="idle"
           viewBox="385 230 380 380"
@@ -338,7 +338,7 @@ export function VoiceTutor() {
   }
 
   return (
-    <section className="card mx-auto flex max-w-2xl flex-col items-center p-5 sm:p-8">
+    <section className="card mx-auto flex max-w-md flex-col items-center p-4">
       {/* Laid out like a video call: her picture, a name tag, and live captions. */}
       <div
         data-status={status}

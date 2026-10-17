@@ -39,7 +39,7 @@ export default async function WelcomePage() {
         <LanguageToggle glass />
       </div>
 
-      <main className="stagger relative flex w-full max-w-xl flex-col items-center text-center">
+      <main className="stagger relative flex w-full max-w-md flex-col items-center text-center">
         <span className="glass flex h-28 w-28 items-center justify-center rounded-full!">
           <LogoMark size={68} loop />
         </span>

@@ -88,6 +88,8 @@ body {
   color: var(--color-foreground);
   font-family: var(--font-sans);
   line-height: 1.6;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
 }
 
 h1,
