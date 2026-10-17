@@ -38,9 +38,7 @@ const ar = {
   welcome: {
     hello: "مرحبًا",
     tagline: "لتعلّم الإنجليزية بالأسلوب الذي تحبه أنت",
-    name: "سلمى عبد الله",
-    major: "تخصص أنظمة معلومات",
-    university: "جامعة عدن",
+    name: "سمية عبد الله",
   },
   home: {
     title: "من أين تبدأ اليوم؟",
@@ -184,9 +182,7 @@ const en: Dictionary = {
   welcome: {
     hello: "Welcome",
     tagline: "Learn English the way you like",
-    name: "Salma Abdullah",
-    major: "Information Systems major",
-    university: "University of Aden",
+    name: "Sumaya Abdullah",
   },
   home: {
     title: "Where do you want to start today?",

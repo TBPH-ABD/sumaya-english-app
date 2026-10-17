@@ -1,5 +1,4 @@
 import { EnterButton } from "@/components/EnterButton";
-import { Icon } from "@/components/Icon";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { LogoMark } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -52,16 +51,6 @@ export default async function WelcomePage() {
 
         <div className="glass mt-10 w-full px-6 py-6">
           <p className="font-display text-3xl font-bold">{t.welcome.name}</p>
-          <ul className="mt-4 flex flex-wrap justify-center gap-3 text-primary-soft">
-            <li className="flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 font-bold">
-              <Icon name="book" size={20} />
-              {t.welcome.major}
-            </li>
-            <li className="flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 font-bold">
-              <Icon name="school" size={20} />
-              {t.welcome.university}
-            </li>
-          </ul>
         </div>
 
         <div className="mt-10">
