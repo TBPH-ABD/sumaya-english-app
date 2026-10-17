@@ -6,10 +6,10 @@ import { getDictionary, getTheme } from "@/lib/locale";
 
 // Decorative words drifting at the edges; delay offsets their motion.
 const words: { text: string; position: string; delay: string }[] = [
-  { text: "Hello", position: "top-[12%] left-[8%]", delay: "0s" },
-  { text: "Learn", position: "top-[20%] right-[10%]", delay: "-1.3s" },
-  { text: "Speak", position: "bottom-[18%] left-[12%]", delay: "-2.6s" },
-  { text: "Grow", position: "bottom-[12%] right-[9%]", delay: "-3.9s" },
+  { text: "Hello", position: "top-[11%] left-[4%]", delay: "0s" },
+  { text: "Learn", position: "top-[22%] right-[4%]", delay: "-1.3s" },
+  { text: "Speak", position: "bottom-[16%] left-[5%]", delay: "-2.6s" },
+  { text: "Grow", position: "bottom-[8%] right-[5%]", delay: "-3.9s" },
 ];
 
 // Welcome screen: the first thing shown at "/". Full-bleed, no site header.
@@ -27,7 +27,7 @@ export default async function WelcomePage() {
             key={word.text}
             dir="ltr"
             style={{ animationDelay: word.delay }}
-            className={`glass anim-float absolute hidden px-5 py-2 font-display text-xl font-bold text-primary-soft md:block ${word.position}`}
+            className={`glass anim-float absolute px-4 py-1.5 font-display text-base font-bold text-primary-soft sm:px-5 sm:py-2 sm:text-xl ${word.position}`}
           >
             {word.text}
           </span>
